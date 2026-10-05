@@ -1,0 +1,3 @@
+import {sameOrigin} from '../../../lib/origin';
+import {db,error} from '../../../lib/booking';
+export async function POST(request:Request){if(!sameOrigin(request))return error('Invalid request.',403);try{const p=await request.json();if(p.website)return Response.json({ok:true});const email=typeof p.email==='string'?p.email.trim().toLowerCase():'';if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||p.consent!==true)return error('Enter a valid email and agree to receive Chillado updates.',400);await db().prepare('INSERT INTO subscribers (email,created_at) VALUES (?,?) ON CONFLICT(email) DO NOTHING').bind(email,Date.now()).run();return Response.json({ok:true});}catch{return error('Your subscription could not be saved. Please try again.');}}

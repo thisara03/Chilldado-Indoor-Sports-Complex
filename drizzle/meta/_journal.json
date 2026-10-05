@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1791148123895,
+      "tag": "0000_open_absorbing_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791149028092,
+      "tag": "0001_hesitant_hobgoblin",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791177907024,
+      "tag": "0002_careful_baron_strucker",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1791178228584,
+      "tag": "0003_brown_the_fallen",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791178520523,
+      "tag": "0004_purple_kid_colt",
+      "breakpoints": true
+    }
+  ]
+}

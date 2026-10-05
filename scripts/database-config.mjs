@@ -1,0 +1,3 @@
+import {createClient} from '@libsql/client';
+export function client(){if(!process.env.TURSO_DATABASE_URL)throw new Error('Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN first.');return createClient({url:process.env.TURSO_DATABASE_URL,authToken:process.env.TURSO_AUTH_TOKEN});}
+export const tables={bookings:['id','token','date','hour','amount','status','created_at','expires_at','payment_id','user_id'],slots:['key','booking_id','expires_at','confirmed'],tournaments:['id','title','date','time','description','created_at'],players:['id','name','team','matches','runs','wickets','updated_at'],subscribers:['email','created_at'],settings:['key','value']};

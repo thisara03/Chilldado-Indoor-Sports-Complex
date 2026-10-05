@@ -1,0 +1,31 @@
+import {spawn,execFileSync} from 'node:child_process';
+import {mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {createServer} from 'node:net';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+const dir=mkdtempSync(join(tmpdir(),'chillado-api-'));
+const env={...process.env,TURSO_DATABASE_URL:'file:'+join(dir,'test.db'),TURSO_AUTH_TOKEN:'',NEXT_PUBLIC_SUPABASE_URL:'',NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'',PAYHERE_MERCHANT_ID:'test-merchant',PAYHERE_MERCHANT_SECRET:'test-secret',PAYHERE_PUBLIC_ORIGIN:'https://example.test'};
+execFileSync(process.execPath,['scripts/migrate.mjs'],{env});
+const socket=createServer();await new Promise(r=>socket.listen(0,'127.0.0.1',r));const port=socket.address().port;await new Promise(r=>socket.close(r));
+env.SITE_URL=`http://127.0.0.1:${port}`;
+const server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port',String(port)],{env,stdio:['ignore','pipe','pipe']});
+const origin=`http://127.0.0.1:${port}`;
+try{
+ await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(new Error('API test server did not start')),15000);server.stdout.on('data',b=>{if(String(b).includes('Ready')){clearTimeout(timeout);resolve();}});server.once('exit',()=>reject(new Error('API test server exited')));});
+ const forged={'oai-authenticated-user-id':'attacker','oai-authenticated-user-email':'thisara1976@gmail.com','origin':origin,'Content-Type':'application/json'};
+ const checkout=await fetch(origin+'/api/checkout',{method:'POST',headers:forged,body:'{}'}); assert.equal(checkout.status,401);
+ for(const route of ['settings','players','tournaments'])assert.equal((await fetch(origin+'/api/'+route,{method:'POST',headers:forged,body:'{}'})).status,403);
+ const admin=await fetch(origin+'/admin',{headers:forged,redirect:'manual'});assert.equal(admin.status,307);assert.match(admin.headers.get('location'),/^\/login/);
+ assert.equal((await fetch(origin+'/auth/signout',{method:'POST',headers:{origin:'https://attacker.invalid'}})).status,403);
+ assert.equal((await fetch(origin+'/auth/password',{method:'POST',headers:{...forged,origin:'https://attacker.invalid'},body:'{}'})).status,403);
+ assert.equal((await fetch(origin+'/api/slots?date=invalid')).status,400);
+ const future=new Date(Date.now()+86400000*3).toISOString().slice(0,10);const slots=await (await fetch(origin+'/api/slots?date='+future)).json();assert.equal(slots.slots.length,12);assert.equal(slots.slots[11].hour,22);
+ assert.equal((await fetch(origin+'/api/subscribe',{method:'POST',headers:forged,body:JSON.stringify({email:'test@example.com',consent:true})})).status,200);
+ const bad=await fetch(origin+'/api/payhere/notify',{method:'POST',body:new URLSearchParams({merchant_id:'test-merchant',order_id:'unknown',md5sig:'BAD'})});assert.equal(bad.status,403);
+ const fields={merchant_id:'test-merchant',order_id:'unknown',payhere_amount:'7000.00',payhere_currency:'LKR',status_code:'2'};const md5=s=>createHash('md5').update(s).digest('hex').toUpperCase();fields.md5sig=md5(fields.merchant_id+fields.order_id+fields.payhere_amount+fields.payhere_currency+fields.status_code+md5('test-secret'));
+ assert.equal((await fetch(origin+'/api/payhere/notify',{method:'POST',body:new URLSearchParams(fields)})).status,400);
+ const home=await (await fetch(origin)).text();assert.match(home,/Chillado/);assert.equal((await fetch(origin+'/chillado-logo.jpg')).status,200);
+ console.log('API smoke checks passed: slot list, assets, subscriptions, forged identity rejection, admin protection, origin checks, payment signatures.');
+}finally{server.kill('SIGTERM');await new Promise(r=>server.once('exit',r));rmSync(dir,{recursive:true,force:true});}

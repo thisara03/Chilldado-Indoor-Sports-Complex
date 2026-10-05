@@ -1,0 +1,2 @@
+import {db,error} from '../../../lib/booking';
+export async function GET(request:Request){try{const u=new URL(request.url);const b=await db().prepare('SELECT id,date,hour,amount,status,expires_at FROM bookings WHERE id=? AND token=?').bind(u.searchParams.get('id'),u.searchParams.get('token')).first<any>();if(!b)return error('Booking not found.',404);if(b.status==='pending'&&b.expires_at<Date.now())b.status='expired';return Response.json(b,{headers:{'Cache-Control':'no-store'}});}catch{return error('Booking status unavailable. Please try again.');}}

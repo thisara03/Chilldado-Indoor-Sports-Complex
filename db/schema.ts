@@ -1,0 +1,7 @@
+import { sqliteTable,text,integer } from 'drizzle-orm/sqlite-core';
+export const bookings=sqliteTable('bookings',{id:text('id').primaryKey(),token:text('token').notNull(),date:text('date').notNull(),hour:integer('hour').notNull(),amount:integer('amount').notNull(),status:text('status').notNull(),createdAt:integer('created_at').notNull(),expiresAt:integer('expires_at').notNull(),paymentId:text('payment_id'),userId:text('user_id')});
+export const slots=sqliteTable('slots',{key:text('key').primaryKey(),bookingId:text('booking_id').notNull(),expiresAt:integer('expires_at').notNull(),confirmed:integer('confirmed').notNull().default(0)});
+export const tournaments=sqliteTable('tournaments',{id:text('id').primaryKey(),title:text('title').notNull(),date:text('date').notNull(),time:text('time').notNull(),description:text('description').notNull(),createdAt:integer('created_at').notNull()});
+export const players=sqliteTable('players',{id:text('id').primaryKey(),name:text('name').notNull(),team:text('team').notNull(),matches:integer('matches').notNull().default(0),runs:integer('runs').notNull().default(0),wickets:integer('wickets').notNull().default(0),updatedAt:integer('updated_at').notNull()});
+export const subscribers=sqliteTable('subscribers',{email:text('email').primaryKey(),createdAt:integer('created_at').notNull()});
+export const settings=sqliteTable('settings',{key:text('key').primaryKey(),value:text('value').notNull()});
